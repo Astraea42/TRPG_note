@@ -16,12 +16,55 @@ permissions:
   packages: write
 
 jobs:
-  docker:
+  build-headless-binary:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build headless Linux binary
+        working-directory: server
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags headless -trimpath -ldflags "-s -w" -o release/trpg-note
+
+      - name: Upload headless binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trpg-note-headless-linux-amd64
+          path: server/release/trpg-note
+          if-no-files-found: error
+
+  docker:
+    needs: build-headless-binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download headless binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trpg-note-headless-linux-amd64
+          path: .docker-bin
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -71,4 +114,3 @@ jobs:
             org.opencontainers.image.title=TRPG_note
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.meta.outputs.version_tag }}
-

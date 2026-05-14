@@ -1,41 +1,14 @@
-FROM node:22-bookworm-slim AS web-builder
-
-WORKDIR /workspace
-
-COPY package.json package-lock.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-
-FROM golang:1.25-bookworm AS go-builder
-
-WORKDIR /src
-
-COPY server/go.mod server/go.sum ./server/
-WORKDIR /src/server
-RUN go mod download
-
-COPY server ./ 
-COPY --from=web-builder /workspace/server/resource ./resource
-
-ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
-
-RUN go build -tags headless -trimpath -ldflags "-s -w" -o /out/trpg-note .
-
-
-FROM debian:bookworm-slim
-
-RUN useradd --system --create-home --uid 10001 appuser
+FROM alpine:3.22
 
 WORKDIR /app
 
-COPY --from=go-builder /out/trpg-note /app/trpg-note
+RUN addgroup -S app && adduser -S -G app -u 10001 appuser
 
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
+COPY .docker-bin/trpg-note /app/trpg-note
+
+RUN chmod +x /app/trpg-note && \
+    mkdir -p /app/data && \
+    chown -R appuser:app /app
 
 USER appuser
 
