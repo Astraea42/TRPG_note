@@ -39,7 +39,7 @@ RUN mkdir -p /app/data && chown -R appuser:app /app
 
 USER appuser
 
-ENV BTR_PORT=8080
+ENV BTR_PORT=7860
 ENV BTR_DB_PATH=/app/data/storage.db
 
 EXPOSE 8080
