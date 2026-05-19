@@ -698,6 +698,16 @@ func main() {
 	flag.Parse()
 
 	cfg := loadConfig()
+
+	// Start HF Dataset sync for persistence (if configured).
+	// Must download BEFORE opening DB, so we restore existing data first.
+	hfSync := NewHFSync(cfg.DBPath)
+	if hfSync != nil {
+		hfSync.DownloadAll()
+		hfSync.Start(5 * time.Minute)
+		log.Println("[sync] HF Dataset sync enabled")
+	}
+
 	db := openDB(cfg)
 	assetDir := filepath.Join(filepath.Dir(cfg.DBPath), "graph_assets")
 	if err := os.MkdirAll(assetDir, 0o755); err != nil {
