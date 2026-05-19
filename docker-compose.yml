@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  trpg-note:
+    build: .
+    container_name: trpg-note
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - BTR_PORT=8080
+      - BTR_DB_PATH=/app/data/storage.db
+    restart: unless-stopped
