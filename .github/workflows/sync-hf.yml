@@ -10,14 +10,18 @@ jobs:
   sync-to-hf:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (shallow, no history)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Push to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          # Remove large build artifacts before pushing to HF
+          rm -rf release/
+          git add -A && git commit -m "clean for hf push" || true
+
           git remote add hf https://yangweili123:${HF_TOKEN}@huggingface.co/spaces/yangweili123/trpg-note
           git push hf main --force
